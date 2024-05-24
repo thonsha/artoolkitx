@@ -152,9 +152,10 @@ static ARdouble  arGetTransMatMultiSquare2(AR3DHandle *handle, ARMarkerInfo *mar
     arMalloc(pos3d, ARdouble, vnum*4*3);
     
     j = 0; 
+    
     for( i = 0; i < config->marker_num; i++ ) { 
         if( (k=config->marker[i].visible) < 0 ) continue;
-        
+        //printf("thonsha 20240415: %d , i = %d\n", config->marker_num, i);
         dir = marker_info[k].dir;
         pos2d[j*8+0] = marker_info[k].vertex[(4-dir)%4][0];
         pos2d[j*8+1] = marker_info[k].vertex[(4-dir)%4][1];
@@ -219,7 +220,7 @@ static ARdouble  arGetTransMatMultiSquare2(AR3DHandle *handle, ARMarkerInfo *mar
         free(pos3d);
         free(pos2d);
     }
-    
+
     if (err < AR_MULTI_POSE_ERROR_CUTOFF_COMBINED_DEFAULT) config->prevF = 1;
     else {
         config->prevF = 0;

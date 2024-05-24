@@ -97,6 +97,9 @@ cnt = 0;
                 for (j = 0; j < arHandle->marker_num; j++) if (arHandle->markerInfo[j].idPatt != -1 || arHandle->markerInfo[j].idMatrix != -1) marker_nums[i]++;
             }
 
+            printf("%d\n", arHandle->marker_num);
+
+
             if (arHandle->arDebug == AR_DEBUG_ENABLE) ARLOGe("Auto threshold (bracket) marker counts -[%3d: %3d] [%3d: %3d] [%3d: %3d]+.\n", thresholds[1], marker_nums[1], thresholds[2], marker_nums[2], thresholds[0], marker_nums[0]);
         
             // If neither of the bracketed values was superior, then change the size of the bracket.

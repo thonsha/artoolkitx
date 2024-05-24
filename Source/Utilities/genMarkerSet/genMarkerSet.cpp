@@ -521,6 +521,7 @@ static void keyboard(SDL_Keycode key)
             quit(0);
             break;
         case ' ':
+            printf("%d", gSelectedMarkers.size());
             if (gSelectedMarkers.size() > 0) {
                 saveFiles();
             };

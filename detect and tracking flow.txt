@@ -1,0 +1,12 @@
+detect and tracking flow
+
+Init
+1. new arController
+2. arController add trackable config/pattern files
+
+Main Loop
+3. arController->capture get frames
+4. arController->update
+5. squareTracker->update
+6. arDetectMarker
+7. 

@@ -532,7 +532,7 @@ if [ $BUILD_WINDOWS ] ; then
     fi
 
     if [ ! -d "depends/windows/include/opencv2" ] ; then
-        curl --location "https://github.com/artoolkitx/opencv/releases/download/4.7.0-dev-artoolkitx/opencv-4.7.0-dev-artoolkitx-win-vc16.tgz" -o opencv2.tgz
+        # curl --location "https://github.com/artoolkitx/opencv/releases/download/4.7.0-dev-artoolkitx/opencv-4.7.0-dev-artoolkitx-win-vc16.tgz" -o opencv2.tgz
         tar xzf opencv2.tgz --strip-components=1 -C depends/windows
         rm opencv2.tgz
     fi
