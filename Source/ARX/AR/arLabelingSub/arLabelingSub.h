@@ -200,7 +200,7 @@ int arLabelingSubEWZ( ARUint8 *image, const int xsize, const int ysize, ARUint8*
             if( *pnt > labelingThresh ) {
 #  else
             if( *pnt > *pnt_thresh ) {
-#  endif
+#  endif 
 #endif // !AR_LABELING_WHITE_REGION_F
                 // pnt is in region.
 #  ifdef AR_LABELING_DEBUG_ENABLE_F

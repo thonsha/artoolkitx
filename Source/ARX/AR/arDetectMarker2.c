@@ -68,19 +68,36 @@ int arDetectMarker2( int xsize, int ysize, ARLabelInfo *labelInfo, int imageProc
         ysize /=  2;
     }
 
+    LARGE_INTEGER frequency;        // ticks per second
+    LARGE_INTEGER t1, t2;           // ticks
+    double elapsedTime;
+
+    QueryPerformanceFrequency(&frequency);
+
     *marker2_num = 0;
+    //printf("labelInfo->label_num: %d\n", labelInfo->label_num);
     for( i = 0; i < labelInfo->label_num; i++ ) {
         if( labelInfo->area[i] < areaMin || labelInfo->area[i] > areaMax ) continue;
         if( labelInfo->clip[i][0] == 1 || labelInfo->clip[i][1] == xsize-2 ) continue;
         if( labelInfo->clip[i][2] == 1 || labelInfo->clip[i][3] == ysize-2 ) continue;
 
+        //printf("labelInfo->label index: %d\n", i);
+        //if (labelInfo->area[i] > 11000) {
+        //    printf("target, %d, %d, %d, %d \n", labelInfo->clip[i][0], labelInfo->clip[i][1], labelInfo->clip[i][2], labelInfo->clip[i][3]);
+        //}
+        
+        
+
         ret = arGetContour( labelInfo->labelImage, xsize, ysize, labelInfo->work, i+1,
                             labelInfo->clip[i], &(markerInfo2[*marker2_num]));
         if( ret < 0 ) continue;
+        //printf("pass contour\n");
 
         ret = check_square( labelInfo->area[i], &(markerInfo2[*marker2_num]), squareFitThresh );
         if( ret < 0 ) continue;
+        //printf("pass square\n");
 
+        //printf("labelInfo->label index passed: %d\n", i);
         markerInfo2[*marker2_num].area   = labelInfo->area[i];
         markerInfo2[*marker2_num].pos[0] = labelInfo->pos[i][0];
         markerInfo2[*marker2_num].pos[1] = labelInfo->pos[i][1];
@@ -90,6 +107,11 @@ int arDetectMarker2( int xsize, int ysize, ARLabelInfo *labelInfo, int imageProc
             break;
         }
     }
+
+    //printf("marker2_num: %d\n", *marker2_num);
+    //for (i = 0; i < *marker2_num; i++) {
+      //  printf("%f, %f, area: %d\n", markerInfo2[i].pos[0], markerInfo2[i].pos[1], markerInfo2[i].area);
+    //}
 
     for( i = 0; i < *marker2_num; i++ ) {
         for( j = i+1; j < *marker2_num; j++ ) {
@@ -160,6 +182,8 @@ int arGetContour( AR_LABELING_LABEL_TYPE *limage, int xsize, int ysize, int *lab
         ARLOGe("??? 1\n"); return -1;
     }
 
+    //printf("%d, %d, %d, %d\n", clip[0], clip[1], clip[2], clip[3]);
+
     marker_info2->coord_num = 1;
     marker_info2->x_coord[0] = sx;
     marker_info2->y_coord[0] = sy;
@@ -168,10 +192,13 @@ int arGetContour( AR_LABELING_LABEL_TYPE *limage, int xsize, int ysize, int *lab
         p1 = &(limage[marker_info2->y_coord[marker_info2->coord_num-1] * xsize
                     + marker_info2->x_coord[marker_info2->coord_num-1]]);
         dir = (dir+5)%8;
+        //printf("dir: ");
         for(i=0;i<8;i++) {
+            //printf("dir: %d , p1: %d\n", dir, p1[ydir[dir] * xsize + xdir[dir]]);
             if( p1[ydir[dir]*xsize+xdir[dir]] > 0 ) break;
             dir = (dir+1)%8;
         }
+        //printf("\n");
         if( i == 8 ) {
             ARLOGe("??? 2\n"); return -1;
         }
@@ -179,6 +206,10 @@ int arGetContour( AR_LABELING_LABEL_TYPE *limage, int xsize, int ysize, int *lab
             = marker_info2->x_coord[marker_info2->coord_num-1] + xdir[dir];
         marker_info2->y_coord[marker_info2->coord_num]
             = marker_info2->y_coord[marker_info2->coord_num-1] + ydir[dir];
+
+        //if (abs(clip[0]-120) <= 5 && abs(clip[1]-251) <= 5 && abs(clip[2]-298) <= 5 && abs(clip[3]-430) <= 5) {
+          //  printf("num: %d, x: %d, y: %d\n", marker_info2->coord_num, marker_info2->x_coord[marker_info2->coord_num], marker_info2->y_coord[marker_info2->coord_num]);
+        //}
         if( marker_info2->x_coord[marker_info2->coord_num] == sx
          && marker_info2->y_coord[marker_info2->coord_num] == sy ) break;
         marker_info2->coord_num++;
@@ -213,6 +244,8 @@ int arGetContour( AR_LABELING_LABEL_TYPE *limage, int xsize, int ysize, int *lab
     marker_info2->y_coord[marker_info2->coord_num] = marker_info2->y_coord[0];
     marker_info2->coord_num++;
 
+    
+
     return 0;
 }
 
@@ -237,6 +270,7 @@ static int check_square( int area, ARMarkerInfo2 *marker_info2, ARdouble factor 
             v1 = i;
         }
     }
+
 
     thresh = (area/0.75) * 0.01 * factor;
     vertex[0] = 0;
@@ -297,9 +331,51 @@ static int check_square( int area, ARMarkerInfo2 *marker_info2, ARdouble factor 
         }
     }
     else {
-        return -1;
+        if (area > 10000) {
+            //printf("wvnum = %d, and wvnm2 = %d\n", wvnum1, wvnum2);
+            if (wvnum1 == 1 && wvnum2 > 1) {
+                if (get_vertex_mod(marker_info2->x_coord, marker_info2->y_coord,
+                    v1, marker_info2->coord_num - 1, thresh, wv2, &wvnum2) < 0) {
+                    return -1;
+                }
+                vertex[1] = wv1[0];
+                vertex[2] = v1;
+                vertex[3] = wv2[0];
+                //printf("vertex: %d, %d, %d, %d\n", vertex[0], vertex[1], vertex[2], vertex[3]);
+            }
+            else if (wvnum1 > 1 && wvnum2 == 1) {
+                if (get_vertex_mod(marker_info2->x_coord, marker_info2->y_coord,
+                    0, v1, thresh, wv1, &wvnum1) < 0) {
+                    return -1;
+                }
+                vertex[1] = wv1[0];
+                vertex[2] = v1;
+                vertex[3] = wv2[0];
+                //printf("vertex: %d, %d, %d, %d\n", vertex[0], vertex[1], vertex[2], vertex[3]);
+            }
+            else {
+                if (get_vertex_mod(marker_info2->x_coord, marker_info2->y_coord,
+                    0, v1, thresh, wv1, &wvnum1) < 0) {
+                    return -1;
+                }
+                if (get_vertex_mod(marker_info2->x_coord, marker_info2->y_coord,
+                    v1, marker_info2->coord_num - 1, thresh, wv2, &wvnum2) < 0) {
+                    return -1;
+                }
+                vertex[1] = wv1[0];
+                vertex[2] = v1;
+                vertex[3] = wv2[0];
+                //printf("vertex: %d, %d, %d, %d\n", vertex[0], vertex[1], vertex[2], vertex[3]);
+
+            }
+        }
+        else {
+            return -1;
+        }
+        
     }
 
+    //printf("vertex: %d, %d, %d, %d\n", vertex[0], vertex[1], vertex[2], vertex[3]);
     marker_info2->vertex[0] = vertex[0];
     marker_info2->vertex[1] = vertex[1];
     marker_info2->vertex[2] = vertex[2];
@@ -331,7 +407,7 @@ static int get_vertex( int x_coord[], int y_coord[], int st,  int ed,
         if( get_vertex(x_coord, y_coord, st,  v1, thresh, vertex, vnum) < 0 )
             return -1;
 
-        if( (*vnum) > 5 ) return(-1);
+        if ((*vnum) > 5) {  return(-1); }
         vertex[(*vnum)] = v1;
         (*vnum)++;
 
@@ -341,3 +417,36 @@ static int get_vertex( int x_coord[], int y_coord[], int st,  int ed,
 
     return 0;
 }
+
+static int get_vertex_mod(int x_coord[], int y_coord[], int st, int ed,
+    ARdouble thresh, int vertex[], int* vnum)
+{
+    ARdouble d, dmax;
+    ARdouble a, b, c;
+    int      i, v1;
+
+    a = y_coord[ed] - y_coord[st];
+    b = x_coord[st] - x_coord[ed];
+    c = x_coord[ed] * y_coord[st] - y_coord[ed] * x_coord[st];
+    dmax = 0;
+    for (i = v1 = (st + 1) /*COVHI10453*/; i < ed; i++) {
+        d = a * x_coord[i] + b * y_coord[i] + c;
+        if (d * d > dmax) {
+            dmax = d * d;
+            v1 = i;
+        }
+    }
+
+    if (dmax / (a * a + b * b) > thresh) {
+
+        vertex[(*vnum)] = v1;
+        (*vnum)++;
+
+    }
+    else {
+        return -1;
+    }
+
+    return 0;
+}
+

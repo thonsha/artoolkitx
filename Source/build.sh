@@ -216,7 +216,7 @@ if [ "$OS" = "Linux" ] ; then
 fi
 
 if [ ! -d "depends/android/include/opencv2" ] ; then
-    curl --location "https://github.com/artoolkitx/opencv/releases/download/4.7.0-dev-artoolkitx/opencv-4.7.0-dev-artoolkitx-android.tgz" -o opencv2.tgz
+    # curl --location "https://github.com/artoolkitx/opencv/releases/download/4.7.0-dev-artoolkitx/opencv-4.7.0-dev-artoolkitx-android.tgz" -o opencv2.tgz
     tar xzf opencv2.tgz --strip-components=1 -C depends/android
     rm opencv2.tgz
 fi

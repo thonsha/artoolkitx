@@ -75,8 +75,15 @@ cnt = 0;
     if (!arHandle || !frame) return (-1);
     
     arHandle->marker_num = 0;
+
+    LARGE_INTEGER frequency;        // ticks per second
+    LARGE_INTEGER t1, t2;           // ticks
+    double elapsedTime;
+
+    QueryPerformanceFrequency(&frequency);
     
     if (arHandle->arLabelingThreshMode == AR_LABELING_THRESH_MODE_AUTO_BRACKETING) {
+        printf(" arHandle->arLabelingThreshAutoIntervalTTL : %d\n ", arHandle->arLabelingThreshAutoIntervalTTL);
         if (arHandle->arLabelingThreshAutoIntervalTTL > 0) {
             arHandle->arLabelingThreshAutoIntervalTTL--;
         } else {
@@ -90,14 +97,29 @@ cnt = 0;
             thresholds[2] = arHandle->arLabelingThresh;
             
             for (i = 0; i < 3; i++) {
+                QueryPerformanceCounter(&t1);
                 if (arLabeling(frame->buffLuma, arHandle->xsize, arHandle->ysize, arHandle->arDebug, arHandle->arLabelingMode, thresholds[i], arHandle->arImageProcMode, &(arHandle->labelInfo), NULL) < 0) return -1;
+                QueryPerformanceCounter(&t2);
+                elapsedTime = (t2.QuadPart - t1.QuadPart) * 1000.0 / frequency.QuadPart;
+                printf("labeling %f ms.\n", elapsedTime);
+
+                QueryPerformanceCounter(&t1);
                 if (arDetectMarker2(arHandle->xsize, arHandle->ysize, &(arHandle->labelInfo), arHandle->arImageProcMode, arHandle->areaMax, arHandle->areaMin, arHandle->squareFitThresh, arHandle->markerInfo2, &(arHandle->marker2_num)) < 0) return -1;
+                QueryPerformanceCounter(&t2);
+                elapsedTime = (t2.QuadPart - t1.QuadPart) * 1000.0 / frequency.QuadPart;
+                printf("detect2 %f ms.\n", elapsedTime);
+
+                QueryPerformanceCounter(&t1);
                 if (arGetMarkerInfo(frame->buff, arHandle->xsize, arHandle->ysize, arHandle->arPixelFormat, arHandle->markerInfo2, arHandle->marker2_num, arHandle->pattHandle, arHandle->arImageProcMode, arHandle->arPatternDetectionMode, &(arHandle->arParamLT->paramLTf), arHandle->pattRatio, arHandle->markerInfo, &(arHandle->marker_num), arHandle->matrixCodeType) < 0) return -1;
+
+                QueryPerformanceCounter(&t2);
+                elapsedTime = (t2.QuadPart - t1.QuadPart) * 1000.0 / frequency.QuadPart;
+                printf("patt match %f ms.\n", elapsedTime);
                 marker_nums[i] = 0;
                 for (j = 0; j < arHandle->marker_num; j++) if (arHandle->markerInfo[j].idPatt != -1 || arHandle->markerInfo[j].idMatrix != -1) marker_nums[i]++;
             }
 
-            printf("%d\n", arHandle->marker_num);
+            //printf("%d\n", arHandle->marker_num);
 
 
             if (arHandle->arDebug == AR_DEBUG_ENABLE) ARLOGe("Auto threshold (bracket) marker counts -[%3d: %3d] [%3d: %3d] [%3d: %3d]+.\n", thresholds[1], marker_nums[1], thresholds[2], marker_nums[2], thresholds[0], marker_nums[0]);
@@ -137,11 +159,12 @@ cnt = 0;
             int ret;
             ret = arImageProcLumaHistAndBoxFilterWithBias(arHandle->arImageProcInfo, frame->buffLuma, arHandle->arLabelingThreshAutoAdaptiveKernelSize, arHandle->arLabelingThreshAutoAdaptiveBias);
             if (ret < 0) return (ret);
-            
+
             ret = arLabeling(frame->buffLuma, arHandle->arImageProcInfo->imageX, arHandle->arImageProcInfo->imageY,
                              arHandle->arDebug, arHandle->arLabelingMode,
                              0, AR_IMAGE_PROC_FRAME_IMAGE,
                              &(arHandle->labelInfo), arHandle->arImageProcInfo->image2);
+        
             if (ret < 0) return (ret);
             
         } else { // !adaptive
@@ -162,22 +185,31 @@ cnt = 0;
                 }
             }
             
+            QueryPerformanceCounter(&t1);
             if( arLabeling(frame->buffLuma, arHandle->xsize, arHandle->ysize,
                            arHandle->arDebug, arHandle->arLabelingMode,
                            arHandle->arLabelingThresh, arHandle->arImageProcMode,
                            &(arHandle->labelInfo), NULL) < 0 ) {
                 return -1;
             }
+            QueryPerformanceCounter(&t2);
+            elapsedTime = (t2.QuadPart - t1.QuadPart) * 1000.0 / frequency.QuadPart;
+            printf("labeling %f ms.\n", elapsedTime);
             
         }
         
+        QueryPerformanceCounter(&t1);
         if( arDetectMarker2( arHandle->xsize, arHandle->ysize,
                             &(arHandle->labelInfo), arHandle->arImageProcMode,
                             arHandle->areaMax, arHandle->areaMin, arHandle->squareFitThresh,
                             arHandle->markerInfo2, &(arHandle->marker2_num) ) < 0 ) {
             return -1;
         }
+        QueryPerformanceCounter(&t2);
+        elapsedTime = (t2.QuadPart - t1.QuadPart) * 1000.0 / frequency.QuadPart;
+        printf("detect2 %f ms.\n", elapsedTime);
         
+        QueryPerformanceCounter(&t1);
         if( arGetMarkerInfo(frame->buff, arHandle->xsize, arHandle->ysize, arHandle->arPixelFormat,
                             arHandle->markerInfo2, arHandle->marker2_num,
                             arHandle->pattHandle, arHandle->arImageProcMode,
@@ -186,6 +218,9 @@ cnt = 0;
                             arHandle->matrixCodeType ) < 0 ) {
             return -1;
         }
+        QueryPerformanceCounter(&t2);
+        elapsedTime = (t2.QuadPart - t1.QuadPart) * 1000.0 / frequency.QuadPart;
+        printf("patt match %f ms.\n", elapsedTime);
     } // !detectionIsDone
     
     if (arHandle->arCornerRefinementMode == AR_CORNER_REFINEMENT_ENABLE) {

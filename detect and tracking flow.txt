@@ -6,7 +6,39 @@ Init
 
 Main Loop
 3. arController->capture get frames
-4. arController->update
-5. squareTracker->update
-6. arDetectMarker
-7. 
+aw4. arController->update => squareTracker->update
+    arDetectMarker
+        5. Labeling
+            label feature area
+            label->clip 0   start x index
+                        1   end x index
+                        2   start y index
+                        3   end y index
+        6. Detect Marker => get contour => check square
+
+            Get Contour:
+                8 directions search contour
+                start from (sx, sy) and one direction ex: (1,0)
+                if next point intensity > 0 then add it into contour list
+                keep going until return to origin (sx, sy)
+
+            Check square:
+
+                start from orgin find the farest point in the contour list v1
+                then find the intermediate point wv1 , wv2
+
+                
+
+        7. GetMarker Info => pattern_match
+        8. Calculate confidence value. 
+            If history mode is enabled, compare the value with history record.
+            If histoy value is higher, use the record instead.
+
+            confidence value:
+                confidence value is generated in genMarkerInfo
+
+
+
+    updateWithDetectedMarkers(Multi)        
+        9. Get transform matrix / calculate error
+        10. If error check passed,  update marker tracker transform matrix.
