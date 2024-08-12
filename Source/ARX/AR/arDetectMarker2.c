@@ -68,11 +68,11 @@ int arDetectMarker2( int xsize, int ysize, ARLabelInfo *labelInfo, int imageProc
         ysize /=  2;
     }
 
-    LARGE_INTEGER frequency;        // ticks per second
-    LARGE_INTEGER t1, t2;           // ticks
-    double elapsedTime;
+    //LARGE_INTEGER frequency;        // ticks per second
+    //LARGE_INTEGER t1, t2;           // ticks
+    //double elapsedTime;
 
-    QueryPerformanceFrequency(&frequency);
+    //QueryPerformanceFrequency(&frequency);
 
     *marker2_num = 0;
     //printf("labelInfo->label_num: %d\n", labelInfo->label_num);

@@ -234,7 +234,8 @@ if [ -z "$ANDROID_HOME" ] ; then
     *****"
 else
 	ANDROID_NDK_VERSION_NUMBER_DEFAULT=26.1.10909125
-    ABIS="armeabi-v7a arm64-v8a x86 x86_64"
+    # ABIS="armeabi-v7a arm64-v8a x86 x86_64"
+    ABIS="armeabi-v7a arm64-v8a"
     for abi in $ABIS; do
         if [ ! -d "$abi" ] ; then
 	        mkdir "$abi"

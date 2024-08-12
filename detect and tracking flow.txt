@@ -8,13 +8,23 @@ Main Loop
 3. arController->capture get frames
 aw4. arController->update => squareTracker->update
     arDetectMarker
-        5. Labeling
+
+        every 8 frames will detect with enhanced threshold adjustmennt
+        以 thresholdBracketOver 和 thresholdBracketUnder 來調整 threshhold並與原始threshold作比較
+        只要其中之一通過就算過，並將結果較好的那個threshold設為基準threshold以作後續使用
+
+        發想：可以改成在sub thread 做
+        
+        
+
+
+        5. Labeling     1.3~2.6 ms
             label feature area
             label->clip 0   start x index
                         1   end x index
                         2   start y index
                         3   end y index
-        6. Detect Marker => get contour => check square
+        6. Detect Marker 2 => get contour => check square     0.1~0.2 ms
 
             Get Contour:
                 8 directions search contour
@@ -29,7 +39,22 @@ aw4. arController->update => squareTracker->update
 
                 
 
-        7. GetMarker Info => pattern_match
+        7. GetMarker Info => pattern_match      0.4~0.8 ms      2Target 0.2~1.6 ms
+
+            arPattGetImage2 : get image data
+
+                get_cpara : use 2D world and local position to calculate para(transform matrix) 
+                
+                use para to transform per pixel from world to local to get image data
+
+            
+            pattern match:
+
+                search the whole search space
+                calculate correlation operation
+
+
+
         8. Calculate confidence value. 
             If history mode is enabled, compare the value with history record.
             If histoy value is higher, use the record instead.
@@ -42,3 +67,10 @@ aw4. arController->update => squareTracker->update
     updateWithDetectedMarkers(Multi)        
         9. Get transform matrix / calculate error
         10. If error check passed,  update marker tracker transform matrix.
+
+
+future:
+    1. 顯示最大區域的方塊，後續只追蹤此方塊，直到lost
+    2. combine error lost value
+    3. .mc file (將.dat和patt包成單一binary file)
+    4. 1:2:1 的版本，實體檔案跟測試影片

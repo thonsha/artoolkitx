@@ -90,6 +90,8 @@ public:
     // Inputs from subclasses.
     bool visiblePrev;                       ///< Whether or not the trackable was visible prior to last update.
 	bool visible;							///< Whether or not the trackable is visible at current time.
+
+    int lostCount = 0;                          /// 20240808 thonsha add . Count lost frmaes.
     
     // Output.
 	ARdouble transformationMatrix[16];		///< Transformation suitable for use in OpenGL

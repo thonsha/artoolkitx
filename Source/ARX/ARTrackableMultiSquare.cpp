@@ -112,9 +112,27 @@ bool ARTrackableMultiSquare::updateWithDetectedMarkers(ARMarkerInfo* markerInfo,
         if (config->prevF != 0) {
             visible = true;
             for (int j = 0; j < 3; j++) for (int k = 0; k < 4; k++) trans[j][k] = config->trans[j][k];
+            lostCount = 0;
         } else visible = false;
 
 	} else visible = false;
+
+    if (visiblePrev && !visible) {
+        if (lostCount < 5) {
+            printf("UID: %d\n", UID);
+            printf("lostCount: %d\n", lostCount);
+            lostCount++;
+            /*for (int j = 0; j < 3; j++) {
+                for (int k = 0; k < 4; k++) printf("%f ", trans[j][k]);
+                printf("\n");
+            }*/
+            visible = true;
+        }
+        else {
+            lostCount = 0;
+            visible = false;
+        }
+    }
 
 	return (ARTrackable::update()); // Parent class will finish update.
 }

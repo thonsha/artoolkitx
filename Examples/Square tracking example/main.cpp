@@ -100,8 +100,13 @@ static const struct marker markers[] = {
     {"kanji.patt", 80.0},
     {"test_set-00.pat", 67.733337}
 };
-static const int markerCount = (sizeof(markers)/sizeof(markers[0]));
-//static const int markerCount = 1;
+
+static const char* markerSets[] = {
+    "test_modified.mrk",
+    "cube_MIFLYR.dat"
+};
+//static const int markerCount = (sizeof(markers)/sizeof(markers[0]));
+static const int markerCount = (sizeof(markerSets) / sizeof(markerSets[0]));
 
 
 //
@@ -220,7 +225,7 @@ int main(int argc, char *argv[])
     char *resourcesDir = arUtilGetResourcesDirectoryPath(AR_UTIL_RESOURCES_DIRECTORY_BEHAVIOR_BEST);
     for (int i = 0; i < markerCount; i++) {
         //std::string markerConfig = "single;" + std::string(resourcesDir) + '/' + markers[i].name + ';' + std::to_string(markers[i].height);
-        std::string markerConfig = "multi;" + std::string(resourcesDir) + '/' + "test_modified.mrk";
+        std::string markerConfig = "multi;" + std::string(resourcesDir) + '/' + markerSets[i];
         markerIDs[i] = arController->addTrackable(markerConfig);
         if (markerIDs[i] == -1) {
             ARLOGe("Error adding marker.\n");
@@ -315,8 +320,8 @@ int main(int argc, char *argv[])
                 std::shared_ptr<ARTrackable> marker = arController->findTrackable(markerIDs[i]);
                 float view[16];
                 if (marker->visible) {
-                    arUtilPrintMtx16(marker->transformationMatrix);
-                    printf("\n");
+                    //arUtilPrintMtx16(marker->transformationMatrix);
+                    //printf("\n");
                     for (int i = 0; i < 16; i++) view[i] = (float)marker->transformationMatrix[i];
                 }
                 drawSetModel(markerModelIDs[i], marker->visible, view);
