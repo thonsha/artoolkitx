@@ -1,5 +1,27 @@
 # Read me for artoolkitX
 
+## Makar Artoolkitx
+* Clone from gitea
+
+        git clone ssh://git@miflydesign.info:3022/thonsha/makar_artoolkitx.git
+
+
+* Build 
+    1. Windows
+        * Requirement: Visual Studio 2019 or later, Cmake, Opencv2 ( Download from [here](https://github.com/artoolkitx/opencv/releases/download/4.7.0-dev-artoolkitx/opencv-4.7.0-dev-artoolkitx-win-vc16.tgz) and renamed to opencv2.tgz in makar_artoolkitx/Source)
+        * Build Library Command:
+
+                cd makar_artoolkitx/Source
+                ./build.sh windows 
+        * Build Examples Command:
+
+                cd makar_artoolkitx/Source
+                ./build.sh windows examples
+            
+
+
+        
+
 ## Build state
 
 | macos | iOS | Android | Linux | Windows |
