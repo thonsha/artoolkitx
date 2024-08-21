@@ -275,6 +275,8 @@ typedef struct {
     ARdouble       *pattpowBW;      ///< Root-mean-square of the pattern intensities.
     //ARdouble        pattRatio;      ///< 
     int             pattSize;       ///< Number of rows/columns in the pattern.
+
+    int             history_patt;   //thonsha add
 } ARPattHandle;
 
 /*!

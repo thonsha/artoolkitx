@@ -76,11 +76,11 @@ cnt = 0;
     
     arHandle->marker_num = 0;
 
-    //LARGE_INTEGER frequency;        // ticks per second
-    //LARGE_INTEGER t1, t2;           // ticks
-    //double elapsedTime;
+    LARGE_INTEGER frequency;        // ticks per second
+    LARGE_INTEGER t1, t2;           // ticks
+    double elapsedTime;
 
-    //QueryPerformanceFrequency(&frequency);
+    QueryPerformanceFrequency(&frequency);
     
     if (arHandle->arLabelingThreshMode == AR_LABELING_THRESH_MODE_AUTO_BRACKETING) {
         printf(" arHandle->arLabelingThreshAutoIntervalTTL : %d\n ", arHandle->arLabelingThreshAutoIntervalTTL);
@@ -204,9 +204,9 @@ cnt = 0;
                             arHandle->matrixCodeType ) < 0 ) {
             return -1;
         }
-       /* QueryPerformanceCounter(&t2);
-        elapsedTime = (t2.QuadPart - t1.QuadPart) * 1000.0 / frequency.QuadPart;
-        printf("patt match %f ms.\n", elapsedTime);*/
+        //QueryPerformanceCounter(&t2);
+        //elapsedTime = (t2.QuadPart - t1.QuadPart) * 1000.0 / frequency.QuadPart;
+        //printf("patt match %f ms.\n", elapsedTime);
     } // !detectionIsDone
     
     if (arHandle->arCornerRefinementMode == AR_CORNER_REFINEMENT_ENABLE) {

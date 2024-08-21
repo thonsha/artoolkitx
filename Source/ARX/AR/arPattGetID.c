@@ -1737,21 +1737,27 @@ static int pattern_match( ARPattHandle *pattHandle, int mode, ARUint8 *data, int
         res1 = res2 = -1;
         k = -1; // Best match in search space.
         max = _0_0;
-        for ( l = 0; l < pattHandle->patt_num; l++ ) { // Consider the whole search space.
-            k++;
-            while( pattHandle->pattf[k] == 0 ) k++; // No pattern at this slot.
-            if( pattHandle->pattf[k] == 2 ) continue; // Pattern at this slot is deactivated.
-            for( j = 0; j < 4; j++ ) { // The 4 rotated variants of the pattern.
-                sum = 0;
-                for(i=0; i < SIZE_SQD_X3; i++)
-                    sum += input[i] * pattHandle->patt[k * 4 + j][i]; // Correlation operation.
-                sum2 = sum / pattHandle->pattpow[k*4 + j] / datapow;
-                if( sum2 > max ) { max = sum2; res1 = j; res2 = k; }
+        if (pattHandle->history_patt == NULL) {
+            for (l = 0; l < pattHandle->patt_num; l++) { // Consider the whole search space.
+                k++;
+                while (pattHandle->pattf[k] == 0) k++; // No pattern at this slot.
+                if (pattHandle->pattf[k] == 2) continue; // Pattern at this slot is deactivated.
+                for (j = 0; j < 4; j++) { // The 4 rotated variants of the pattern.
+                    sum = 0;
+                    for (i = 0; i < SIZE_SQD_X3; i++)
+                        sum += input[i] * pattHandle->patt[k * 4 + j][i]; // Correlation operation.
+                    sum2 = sum / pattHandle->pattpow[k * 4 + j] / datapow;
+                    if (sum2 > max) { max = sum2; res1 = j; res2 = k; }
+                }
             }
+        }
+        else {
+            //printf("history patt: %d \n", pattHandle->history_patt);
         }
         *dir  = res1;
         *code = res2;
         *cf   = max;
+        pattHandle->history_patt = res2;
 
         free( input );
         return 0;
@@ -1788,21 +1794,49 @@ static int pattern_match( ARPattHandle *pattHandle, int mode, ARUint8 *data, int
         res1 = res2 = -1;
         k = -1;
         max = _0_0;
-        for ( l = 0; l < pattHandle->patt_num; l++ ) {
-            k++;
-            while ( pattHandle->pattf[k] == 0 ) k++;
-            if ( pattHandle->pattf[k] == 2 ) continue;
-            for ( j = 0; j < 4; j++ ) {
-                sum = 0;
-                for ( i=0; i < SIZE_SQD; i++ )
-                    sum += input[i] * (pattHandle->pattBW[k * 4 + j][i]);
-                sum2 = sum / pattHandle->pattpowBW[k * 4 + j] / datapow;
-                if ( sum2 > max ) { max = sum2; res1 = j; res2 = k; }
+        if (pattHandle->history_patt == NULL || pattHandle->history_patt == -1 || pattHandle->history_patt >= pattHandle->patt_num) {
+            for (l = 0; l < pattHandle->patt_num; l++) {
+                k++;
+                while (pattHandle->pattf[k] == 0) k++;
+                if (pattHandle->pattf[k] == 2) continue;
+                for (j = 0; j < 4; j++) {
+                    sum = 0;
+                    for (i = 0; i < SIZE_SQD; i++)
+                        sum += input[i] * (pattHandle->pattBW[k * 4 + j][i]);
+                    sum2 = sum / pattHandle->pattpowBW[k * 4 + j] / datapow;
+                    if (sum2 > max) { max = sum2; res1 = j; res2 = k; }
+                }
             }
+            pattHandle->history_patt = res2;
+            //printf("init history patt: %d \n", pattHandle->history_patt);
+        }
+        else {
+            //printf("history patt: %d \n", pattHandle->history_patt);
+            k = (pattHandle->history_patt / 6) * 6 - 1;
+
+            for (l = (pattHandle->history_patt / 6)*6; l < (pattHandle->history_patt/6)*6+6; l++) {
+                k++;
+                while (pattHandle->pattf[k] == 0) k++;
+                if (pattHandle->pattf[k] == 2) continue;
+                for (j = 0; j < 4; j++) {
+                    sum = 0;
+                    for (i = 0; i < SIZE_SQD; i++)
+                        sum += input[i] * (pattHandle->pattBW[k * 4 + j][i]);
+                    sum2 = sum / pattHandle->pattpowBW[k * 4 + j] / datapow;
+                   /* printf("sum2: %f, max: %f \n", sum2, max);*/
+                    if (sum2 > max) { max = sum2; res1 = j; res2 = k; }
+                }
+            }
+            
+            pattHandle->history_patt = res2;
+
+            if (max < 0.5) pattHandle->history_patt = -1;
+            
         }
         *dir  = res1;
         *code = res2;
         *cf   = max;
+        
 
         free( input );
         return 0;

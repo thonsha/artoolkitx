@@ -405,6 +405,9 @@ bool ARTrackerSquare::update(AR2VideoBufferT *buff0, AR2VideoBufferT *buff1)
     bool success = true;
     if (!buff1) {
         for (std::vector<std::shared_ptr<ARTrackable>>::iterator it = m_trackables.begin(); it != m_trackables.end(); ++it) {
+            if (visibleUID != -1 && visibleUID != (*it)->UID) {
+                continue;
+            }
             if ((*it)->type == ARTrackable::SINGLE) {
                 success &= (std::static_pointer_cast<ARTrackableSquare>(*it))->updateWithDetectedMarkers(markerInfo0, markerNum0, m_ar3DHandle);
             } else if ((*it)->type == ARTrackable::MULTI) {
@@ -412,9 +415,21 @@ bool ARTrackerSquare::update(AR2VideoBufferT *buff0, AR2VideoBufferT *buff1)
             } else if ((*it)->type == ARTrackable::MULTI_AUTO) {
                 success &= (std::static_pointer_cast<ARTrackableMultiSquareAuto>(*it))->updateWithDetectedMarkers(markerInfo0, markerNum0, m_arHandle0->xsize, m_arHandle0->ysize, m_ar3DHandle);
             }
+            if ((*it)->visible && visibleUID == -1 && previsibleUID == -1) {
+                visibleUID = (*it)->UID;
+            }
+            else if (!(*it)->visible && visibleUID == (*it)->UID) {
+                visibleUID = -1;
+            }
+
+
         }
+        previsibleUID = visibleUID;
     } else {
         for (std::vector<std::shared_ptr<ARTrackable>>::iterator it = m_trackables.begin(); it != m_trackables.end(); ++it) {
+            if (visibleUID != -1 && visibleUID != (*it)->UID) {
+                continue;
+            }
             if ((*it)->type == ARTrackable::SINGLE) {
                 success &= (std::static_pointer_cast<ARTrackableSquare>(*it))->updateWithDetectedMarkersStereo(markerInfo0, markerNum0, markerInfo1, markerNum1, m_ar3DStereoHandle, m_transL2R);
             } else if ((*it)->type == ARTrackable::MULTI) {
@@ -422,7 +437,14 @@ bool ARTrackerSquare::update(AR2VideoBufferT *buff0, AR2VideoBufferT *buff1)
             } else if ((*it)->type == ARTrackable::MULTI_AUTO) {
                 success &= (std::static_pointer_cast<ARTrackableMultiSquareAuto>(*it))->updateWithDetectedMarkersStereo(markerInfo0, markerNum0, m_arHandle0->xsize, m_arHandle0->ysize, markerInfo1, markerNum1, m_arHandle1->xsize, m_arHandle1->ysize, m_ar3DStereoHandle, m_transL2R);
             }
+            if ((*it)->visible && visibleUID == -1 && previsibleUID == -1) {
+                visibleUID = (*it)->UID;
+            }
+            else if (!(*it)->visible && visibleUID == (*it)->UID) {
+                visibleUID = -1;
+            }
         }
+        previsibleUID = visibleUID;
     }
 
     // If the user wants unmatched markers to be added as new trackables, and we're doing barcode (matrix code)

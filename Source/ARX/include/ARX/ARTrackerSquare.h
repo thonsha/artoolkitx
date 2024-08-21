@@ -203,6 +203,8 @@ private:
     AR3DHandle *m_ar3DHandle;           ///< Structure used to compute 3D poses from tracking data.
     ARdouble m_transL2R[3][4];          ///< For stereo tracking, transformation matrix from left camera to right camera.
     AR3DStereoHandle *m_ar3DStereoHandle; ///< For stereo tracking, additional tracker state.
+
+    int visibleUID = -1, previsibleUID = -1;
 };
 
 #endif // !ARTRACKERSQUARE_H
