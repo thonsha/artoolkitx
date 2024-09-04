@@ -67,7 +67,7 @@ extern "C" {
 #define    AR_MULTI_CONFIDENCE_PATTERN_CUTOFF_DEFAULT   0.5
 #define    AR_MULTI_CONFIDENCE_MATRIX_CUTOFF_DEFAULT    0.5
 #define    AR_MULTI_POSE_ERROR_CUTOFF_EACH_DEFAULT      4.0 // Maximum allowable pose estimation error for each marker.
-#define    AR_MULTI_POSE_ERROR_CUTOFF_COMBINED_DEFAULT 20.0 // Maximum allowable pose estimation error for combined marker set.
+#define    AR_MULTI_POSE_ERROR_CUTOFF_COMBINED_DEFAULT 30.0 // Maximum allowable pose estimation error for combined marker set. //thonsha modify 20 -> 30
 
 
 typedef struct {

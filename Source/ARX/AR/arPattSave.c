@@ -84,3 +84,78 @@ int arPattSave( ARUint8 *image, int xsize, int ysize, int pixelFormat, ARParamLT
 
     return 0;
 }
+
+
+//thonsha
+int arPattBinSave( ARUint8* image, int xsize, int ysize, int pixelFormat, ARParamLTf* paramLTf,
+                   int imageProcMode, ARMarkerInfo* marker_info, ARdouble pattRatio, int pattSize, const char* filename)
+{
+    FILE* fp;
+    ARUint8* ext_pat[4];
+    ARdouble    vertex[4][2];
+    int       i, j, k, x, y;
+    static int count = 0;
+
+    const char pattAnchor[] = "PATT";
+    unsigned char padding = 0x00;
+    unsigned char paddingSize = 16;
+    unsigned int  anchorOffset = 0L;
+
+    for (i = 0; i < 4; i++) {
+        arMalloc(ext_pat[i], ARUint8, pattSize * pattSize * 3);
+    }
+
+    for (j = 0; j < 4; j++) {
+        for (k = 0; k < 4; k++) {
+            vertex[k][0] = marker_info->vertex[(k + j + 2) % 4][0];
+            vertex[k][1] = marker_info->vertex[(k + j + 2) % 4][1];
+        }
+        arPattGetImage2(imageProcMode, AR_TEMPLATE_MATCHING_COLOR, pattSize, pattSize * AR_PATT_SAMPLE_FACTOR1,
+            image, xsize, ysize, pixelFormat, paramLTf, vertex, pattRatio, ext_pat[j]);
+    }
+
+    fp = fopen(filename, "ab");
+    if (fp == NULL) return -1;
+
+    // record the offset of PATT anchor before writing "PATT" 
+    fseek(fp, 0L, SEEK_END);
+    anchorOffset = ftell(fp);
+
+    if (fwrite(pattAnchor, sizeof(pattAnchor) - 1, 1, fp) != 1) goto done; // without null char
+    paddingSize = 16 - (sizeof(pattAnchor) - 1);
+    for (int ii = 0; ii < paddingSize; ++ii) {
+        if (fwrite(&padding, sizeof(padding), 1, fp) != 1) goto done;
+    }
+
+    // Write out in order AR_PATT_SIZE_X columns x AR_PATT_SIZE_Y rows x 3 colours x 4 orientations.
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 3; j++) {
+            for (y = 0; y < pattSize; y++) {
+                for (x = 0; x < pattSize; x++) {
+                    fwrite(&(ext_pat[i][(y * pattSize + x) * 3 + j]), sizeof(ARUint8), 1, fp);
+                }
+            }
+        }
+    }
+
+    // write the postion of "PATT" to the corresponding offset of the binary file
+    fclose(fp);
+    if ((fp = fopen(filename, "r+b")) == NULL) {
+        ARLOGe("File open error. %s\n", filename);
+        return -1;
+    }
+
+    fseek(fp, 16UL*(2+count/3)+count%3*4, SEEK_SET);
+    if (fwrite(&anchorOffset, sizeof(anchorOffset), 1, fp) != 1) goto done;
+
+    count++;
+
+done:
+    fclose(fp);
+
+    for (i = 0; i < 4; i++) {
+        free(ext_pat[i]);
+    }
+
+    return 0;
+}

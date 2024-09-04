@@ -70,7 +70,18 @@ aw4. arController->update => squareTracker->update
 
 
 future:
-    1. 顯示最大區域的方塊，後續只追蹤此方塊，直到lost
-    2. combine error lost value
+    1. 顯示最大區域的方塊，後續只追蹤此方塊，直到lost (done)
+    2. combine error lost value 
     3. .mc file (將.dat和patt包成單一binary file)
-    4. 1:2:1 的版本，實體檔案跟測試影片
+    4. 1:2:1 的版本，實體檔案跟測試影片 (done)
+    5. 改寫 原始artoolkit function 以兼容舊版
+
+
+.mc file design
+================================================================
+
+MIFLY(5B) Major(1B) minor(1B)  => padding 0
+MAKARCUBE位置(4B)  => padding 0
+PATT位置1(4B) PATT位置2(4B) PATT位置3(4B)  => padding 0
+PATT位置4(4B) PATT位置5(4B) PATT位置6(4B)  => padding 0
+MAKARCUBE

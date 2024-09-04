@@ -147,6 +147,7 @@ static void keyboard(SDL_Keycode key);
 static void mouse(Uint8 button, Sint32 x, Sint32 y); // button = SDL_BUTTON_LEFT|SDL_BUTTON_MIDDLE|SDL_BUTTON_RIGHT etc.
 static int detect(float **markerWidths_p);
 static void saveFiles(void);
+static void saveBinFiles(void); // thonsha add
 static void processCommandLineOptions(int argc, char *argv[]);
 static void usage(char *com);
 static void check_square(ARMarkerInfo *markerInfo, int markerNum, float *markerWidths);
@@ -156,6 +157,8 @@ static void drawView(void);
 static void drawBackground(const float width, const float height, const float x, const float y);
 static void printHelpKeys(void);
 static void printMode(void);
+
+static void autoSelectMarker(void); //thonsha
 
 int main(int argc, char *argv[])
 {
@@ -521,9 +524,9 @@ static void keyboard(SDL_Keycode key)
             quit(0);
             break;
         case ' ':
-            printf("%d", gSelectedMarkers.size());
             if (gSelectedMarkers.size() > 0) {
-                saveFiles();
+                //saveFiles();
+                saveBinFiles();
             };
             break;
         case 'X':
@@ -590,6 +593,10 @@ static void keyboard(SDL_Keycode key)
             gShowMode = !gShowMode;
             redraw = true;
             break;
+        case 's':
+        case 'S':
+            autoSelectMarker();
+            break;
         default:
             break;
     }
@@ -651,6 +658,59 @@ static void mouse(Uint8 button, Sint32 x, Sint32 y)
     }
 }
 
+static void autoSelectMarker(void) {
+
+    // thonsha add for auto select markers in jpg file
+
+    int markerNum = arGetMarkerNum(gARHandle);
+    ARMarkerInfo* markerInfo = arGetMarker(gARHandle);
+
+    int minX, minY, cenX, preY;
+    
+    for (int i = 0; i < markerNum; i++) {
+        if (gMarkerWidths[i] <= 0.0) continue;
+        
+        ARdouble(*v)[2] = markerInfo[i].vertex;
+        int x = int(v[0][0]), y = int(v[0][1]);
+        
+
+        if (i != 0) {
+            if (y < minY) {
+                gSelectedMarkers.insert(gSelectedMarkers.begin(), &markerInfo[i]);
+                minY = v[0][1];
+            }
+            else if (x < minX) {
+                gSelectedMarkers.insert(gSelectedMarkers.begin() + 1, &markerInfo[i]);
+                minX = v[0][0];
+            }
+            else if (y > preY && x == cenX) {
+                gSelectedMarkers.push_back(&markerInfo[i]);
+            }
+            else if (y >= preY && x > cenX) {
+                if(gSelectedMarkers.size() <= 3)
+                    gSelectedMarkers.push_back(&markerInfo[i]);
+                else
+                    gSelectedMarkers.insert(gSelectedMarkers.begin() + 3, &markerInfo[i]);
+            }
+           
+        }
+        else {
+            minX = x;
+            minY = y;
+            cenX = x;
+
+            gSelectedMarkers.push_back(&markerInfo[i]);
+        }
+
+        
+        preY = y;
+
+    }
+    
+    if (gSelectedMarkers.size() != 6) printf("Error: not enough marker \n");
+
+}
+
 static void saveFiles(void)
 {
     int     ret = 0;
@@ -659,6 +719,7 @@ static void saveFiles(void)
     char   *basename = NULL;
     const char markerExt[] = "mrk";
     const char patternExt[] = "pat";
+    const char makarCubeExt[] = "mc";   //thonsha
     FILE    *fp;
     int     x, y;
     int     co;
@@ -775,6 +836,174 @@ static void saveFiles(void)
 done:
     fclose(fp);
     
+done0:
+    free(basename);
+    quit(ret);
+}
+
+//thonsha add
+static void saveBinFiles(void)
+{
+    int     ret = 0;
+    char    path[MAXPATHLEN] = "";
+    size_t  pathLen = 0L;
+    char* basename = NULL;
+    const char mainAnchor[] = "MIFLY";
+    const char cubeAnchor[] = "MAKARCUBE";
+    const char pattAnchor[] = "PATT";
+    unsigned char majorVersion = 0x01;
+    unsigned char minorVersion = 0x00;
+    const char makarCubeExt[] = "mc";   
+    unsigned char padding = 0x00;
+    unsigned char paddingSize = 16;
+    unsigned int  anchorOffset = 0L;
+
+    FILE* fp;
+    int     x, y;
+    int     co;
+    float   vec[2][2], center[2], length;
+    float   trans[6][3][4];
+    float   mx1, my1, mx2, my2;
+    //static int r = 0;
+
+    basename = arUtilGetFileBasenameFromPath(inputFilePath, 0);
+
+    arUtilGetDirectoryNameFromPath(path, inputFilePath, sizeof(path), 1);
+    pathLen = strlen(path);
+    snprintf(path + pathLen, sizeof(path) - pathLen, "%s.%s", basename, makarCubeExt);
+    if (!(fp = fopen(path, "wb"))) {
+        ARPRINTE("Error opening output marker file '%s' for writing.\n", path);
+        ARLOGperror(NULL);
+        ret = -1;
+        goto done0;
+    }
+
+    if (fwrite(mainAnchor, sizeof(mainAnchor) - 1, 1, fp) != 1) goto done; // without a null char
+    if (fwrite(&majorVersion, sizeof(majorVersion), 1, fp) != 1) goto done;
+    if (fwrite(&minorVersion, sizeof(minorVersion), 1, fp) != 1) goto done;
+    paddingSize = 16 - (sizeof(mainAnchor) - 1) - sizeof(majorVersion) - sizeof(minorVersion);
+    for (int ii = 0; ii < paddingSize; ++ii) {
+        if (fwrite(&padding, sizeof(padding), 1, fp) != 1) goto done;
+    }
+
+
+    // write three blank line
+    paddingSize = 16;
+    for (int ii = 0; ii < paddingSize*3; ++ii) {
+        if (fwrite(&padding, sizeof(padding), 1, fp) != 1) goto done;
+    }
+
+    // record the offset of MAKARCUBE anchor before writing "MAKARCUBE" 
+    anchorOffset = ftell(fp);
+
+    if (fwrite(cubeAnchor, sizeof(cubeAnchor) - 1, 1, fp) != 1) goto done; // without null char
+    paddingSize = 16 - (sizeof(cubeAnchor) - 1);
+    for (int ii = 0; ii < paddingSize; ++ii) {
+        if (fwrite(&padding, sizeof(padding), 1, fp) != 1) goto done;
+    }
+
+    // write the postion of "MAKARCUBE" to the corresponding offset of the binary file
+    fseek(fp, 16UL, SEEK_SET);
+    if (fwrite(&anchorOffset, sizeof(anchorOffset), 1, fp) != 1) goto done;
+
+    fseek(fp, 0L, SEEK_END);
+
+    /*paddingSize = 16;
+    for (int ii = 0; ii < paddingSize * 20; ++ii) {
+        if (fwrite(&padding, sizeof(padding), 1, fp) != 1) goto done;
+    }*/
+
+    // Write the marker file.
+    float markerWidth = 40.0f;
+
+    for (int i = 0; i < 6; i++) { // set initial transform matrix
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 4; k++) {
+                trans[i][j][k] = 0.0;
+            }
+        }
+    }
+
+
+    trans[0][0][0] = 1.0;  //1
+    trans[0][1][1] = 1.0;
+    trans[0][2][2] = 1.0;
+
+    trans[1][0][2] = -1.0; //2
+    trans[1][1][0] = -1.0;
+    trans[1][2][1] = 1.0;
+    trans[1][0][3] = -40.0;
+    trans[1][1][3] = 0.0;
+    trans[1][2][3] = -40.0;
+
+    trans[2][0][0] = 1.0; //3
+    trans[2][1][2] = -1.0;
+    trans[2][2][1] = 1.0;
+    trans[2][0][3] = 0.0;
+    trans[2][1][3] = -40.0;
+    trans[2][2][3] = -40.0;
+
+    trans[3][0][2] = 1.0; //4
+    trans[3][1][0] = 1.0;
+    trans[3][2][1] = 1.0;
+    trans[3][0][3] = 40.0;
+    trans[3][1][3] = 0.0;
+    trans[3][2][3] = -40.0;
+
+    trans[4][0][0] = 1.0; //5
+    trans[4][1][1] = -1.0;
+    trans[4][2][2] = -1.0;
+    trans[4][0][3] = 0.0;
+    trans[4][1][3] = 0.0;
+    trans[4][2][3] = -80.0;
+
+    trans[5][0][0] = 1.0; //6
+    trans[5][1][2] = 1.0;
+    trans[5][2][1] = -1.0;
+    trans[5][0][3] = 0.0;
+    trans[5][1][3] = 40.0;
+    trans[5][2][3] = -40.0;
+
+
+
+    co = 0;
+    for (std::vector<ARMarkerInfo*>::iterator it = gSelectedMarkers.begin(); it != gSelectedMarkers.end(); ++it) {
+
+        if (fwrite(&markerWidth, sizeof(float), 1, fp) != 1) goto done;
+        paddingSize = 16 - (sizeof(float));
+        for (int ii = 0; ii < paddingSize; ++ii) {
+            if (fwrite(&padding, sizeof(padding), 1, fp) != 1) goto done;
+        }
+
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 4; k++) {
+                if (fwrite(&trans[co][j][k], sizeof(float), 1, fp) != 1) goto done;
+            }
+        }
+
+        co++;
+    }
+
+done:
+    fclose(fp);
+
+    // write PATT data
+    arUtilGetDirectoryNameFromPath(path, inputFilePath, sizeof(path), 1);
+    pathLen = strlen(path);
+    snprintf(path + pathLen, sizeof(path) - pathLen, "%s.%s", basename, makarCubeExt);
+    for (std::vector<ARMarkerInfo*>::iterator it = gSelectedMarkers.begin(); it != gSelectedMarkers.end(); it++) {
+
+        if (arPattBinSave(image.buff, imageWidth, imageHeight, imagePixelFormat, &(cparamLT->paramLTf), AR_IMAGE_PROC_FRAME_IMAGE, *it, arGetPattRatio(gARHandle), gPattSize, path) < 0) {
+            ARPRINTE("Error saving pattern file '%s'.\n", path);
+            ret = -1;
+            goto done;
+        }
+        else {
+            ARPRINT("Saved pattern file '%s'.\n", path);
+        }
+    }
+
+
 done0:
     free(basename);
     quit(ret);
